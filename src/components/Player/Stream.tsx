@@ -49,13 +49,16 @@ const langParam = searchParams.get("lang");
 
   const provider = useAppSelector((state) => state.options.api);
 
-  // Function to update URL when language changes
+// Replace your updateLanguage function with this:
 const updateLanguage = (lang: string) => {
   setCurrentLang(lang);
   
-  // Create new URL with updated language parameter
-  const newQueryString = createQueryString(searchParams, "lang", lang);
-  router.replace(`?${newQueryString}`, { scroll: false });
+  // Create new URL parameters from the current searchParams
+  const newParams = new URLSearchParams(searchParams.toString());
+  newParams.set("lang", lang);
+  
+  // Update URL without refreshing page
+  router.replace(`?${newParams.toString()}`, { scroll: false });
 };
 
   useEffect(() => {
