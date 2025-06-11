@@ -49,20 +49,30 @@ const langParam = searchParams.get("lang");
 
   const provider = useAppSelector((state) => state.options.api);
 
-// Replace your updateLanguage function with this:
+  // Function to update URL when language changes
 const updateLanguage = (lang: string) => {
-  setCurrentLang(lang);
-  
-  // Create new URL parameters from the current searchParams
-  const newParams = new URLSearchParams(searchParams.toString());
-  newParams.set("lang", lang);
-  
-  // Update URL without refreshing page
-  router.replace(`?${newParams.toString()}`, { scroll: false });
-};
+    setCurrentLang(lang);
+    
+    // Create mutable copy of searchParams
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("lang", lang);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
+// Add this function to throttle requests
+function throttle<T extends (...args: any[]) => any>(func: T, limit: number): (...args: Parameters<T>) => void{
+  let inThrottle = false;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
 
   useEffect(() => {
-    async function fetchPosterData() {
+    const fetchPosterData = throttle(async() => {
       try {
         // First try to get TMDB ID using IMDB ID
         const findResponse = await fetch(
@@ -94,7 +104,7 @@ const updateLanguage = (lang: string) => {
       } catch (error) {
         console.error('Error fetching poster data:', error);
       }
-    }
+    }, 1000);
 
     fetchPosterData();
   }, [params.imdb, params.type]);

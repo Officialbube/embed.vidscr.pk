@@ -80,10 +80,17 @@ export async function getStreamUrl(file: string, key: string) {
 // get Media info
 export async function getMediaInfo(id: string) {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
     const response = await fetch(
       `${process.env.STREAM_API}/mediaInfo?id=${id}`,
-      { cache: "no-cache" }
+      { cache: "no-cache",
+        signal: controller.signal
+       }
     );
+
+    clearTimeout(timeout);
 
     // First check if response is OK
     if (!response.ok) {
@@ -110,12 +117,19 @@ export async function getMediaInfo(id: string) {
 
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Network error:', error);
+  } catch (e) {
+   // FIX: Properly handle unknown error type
+    if (e && typeof e === 'object' && 'name' in e && e.name === 'AbortError') {
+      return { 
+        success: false, 
+        error: 'Request timed out'
+      };
+    }
+    console.error('Network error:', e);
     return { 
       success: false, 
       error: 'Network request failed',
-      details: error 
+      details: e 
     };
   }
 }
